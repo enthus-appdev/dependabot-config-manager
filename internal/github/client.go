@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/go-github/v50/github"
-	"github.com/your-org/dependabot-config-manager/internal/config"
-	"github.com/your-org/dependabot-config-manager/internal/util"
+	"github.com/enthus-appdev/dependabot-config-manager/internal/config"
+	"github.com/enthus-appdev/dependabot-config-manager/internal/util"
 	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v3"
 )
@@ -26,7 +26,7 @@ func NewClient(token, org string) *Client {
 		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(ctx, ts)
-	
+
 	return &Client{
 		client: github.NewClient(tc),
 		org:    org,
@@ -41,31 +41,31 @@ func (c *Client) GetClient() *github.Client {
 // ListRepositories lists all repositories in the organization
 func (c *Client) ListRepositories(ctx context.Context, excludeArchived bool) ([]*github.Repository, error) {
 	var allRepos []*github.Repository
-	
+
 	opt := &github.RepositoryListByOrgOptions{
 		Type:        "all",
 		ListOptions: github.ListOptions{PerPage: 100},
 	}
-	
+
 	for {
 		repos, resp, err := c.client.Repositories.ListByOrg(ctx, c.org, opt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list repositories: %w", err)
 		}
-		
+
 		for _, repo := range repos {
 			if excludeArchived && repo.Archived != nil && *repo.Archived {
 				continue
 			}
 			allRepos = append(allRepos, repo)
 		}
-		
+
 		if resp.NextPage == 0 {
 			break
 		}
 		opt.Page = resp.NextPage
 	}
-	
+
 	return allRepos, nil
 }
 
@@ -87,21 +87,21 @@ func (c *Client) GetFileContent(ctx context.Context, repo, path string) ([]byte,
 		}
 		return nil, "", fmt.Errorf("failed to get file content: %w", err)
 	}
-	
+
 	if fileContent.Content == nil {
 		return nil, "", fmt.Errorf("file content is nil")
 	}
-	
+
 	content, err := base64.StdEncoding.DecodeString(*fileContent.Content)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to decode content: %w", err)
 	}
-	
+
 	sha := ""
 	if fileContent.SHA != nil {
 		sha = *fileContent.SHA
 	}
-	
+
 	return content, sha, nil
 }
 
@@ -112,22 +112,22 @@ func (c *Client) CreateOrUpdateFile(ctx context.Context, repo, path, message str
 	if err != nil {
 		return fmt.Errorf("failed to get repository info: %w", err)
 	}
-	
+
 	defaultBranch := "main"
 	if repoInfo.DefaultBranch != nil {
 		defaultBranch = *repoInfo.DefaultBranch
 	}
-	
+
 	opts := &github.RepositoryContentFileOptions{
 		Message: &message,
 		Content: content,
 		Branch:  github.String(defaultBranch),
 	}
-	
+
 	if sha != "" {
 		opts.SHA = &sha
 	}
-	
+
 	_, _, err = c.client.Repositories.CreateFile(ctx, c.org, repo, path, opts)
 	if err != nil {
 		// If creation fails, try update
@@ -143,7 +143,7 @@ func (c *Client) CreateOrUpdateFile(ctx context.Context, repo, path, message str
 			}
 		}
 	}
-	
+
 	return err
 }
 
@@ -151,24 +151,24 @@ func (c *Client) CreateOrUpdateFile(ctx context.Context, repo, path, message str
 func (c *Client) CreatePullRequest(ctx context.Context, repo string, config *config.DependabotConfig, yamlIndent int) error {
 	// Create a branch
 	branchName := fmt.Sprintf("dependabot-config-%d", time.Now().Unix())
-	
+
 	// Get default branch
 	repoInfo, _, err := c.client.Repositories.Get(ctx, c.org, repo)
 	if err != nil {
 		return fmt.Errorf("failed to get repository info: %w", err)
 	}
-	
+
 	defaultBranch := "main"
 	if repoInfo.DefaultBranch != nil {
 		defaultBranch = *repoInfo.DefaultBranch
 	}
-	
+
 	// Get reference of default branch
 	ref, _, err := c.client.Git.GetRef(ctx, c.org, repo, "refs/heads/"+defaultBranch)
 	if err != nil {
 		return fmt.Errorf("failed to get reference: %w", err)
 	}
-	
+
 	// Create new branch
 	newRef := &github.Reference{
 		Ref: github.String("refs/heads/" + branchName),
@@ -176,25 +176,25 @@ func (c *Client) CreatePullRequest(ctx context.Context, repo string, config *con
 			SHA: ref.Object.SHA,
 		},
 	}
-	
+
 	_, _, err = c.client.Git.CreateRef(ctx, c.org, repo, newRef)
 	if err != nil {
 		return fmt.Errorf("failed to create branch: %w", err)
 	}
-	
+
 	// Create or update the Dependabot config file on the new branch
 	content, err := util.MarshalYAML(config, yamlIndent)
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
-	
+
 	message := "Add/Update Dependabot configuration"
 	opts := &github.RepositoryContentFileOptions{
 		Message: &message,
 		Content: content,
 		Branch:  &branchName,
 	}
-	
+
 	// Check if file exists
 	existingContent, sha, _ := c.GetFileContent(ctx, repo, ".github/dependabot.yml")
 	if existingContent != nil {
@@ -203,15 +203,15 @@ func (c *Client) CreatePullRequest(ctx context.Context, repo string, config *con
 	} else {
 		_, _, err = c.client.Repositories.CreateFile(ctx, c.org, repo, ".github/dependabot.yml", opts)
 	}
-	
+
 	if err != nil {
 		return fmt.Errorf("failed to create/update file in branch: %w", err)
 	}
-	
+
 	// Create pull request
 	prTitle := "Configure Dependabot for dependency updates"
 	prBody := generatePRBody(config)
-	
+
 	pr := &github.NewPullRequest{
 		Title:               &prTitle,
 		Head:                &branchName,
@@ -219,12 +219,12 @@ func (c *Client) CreatePullRequest(ctx context.Context, repo string, config *con
 		Body:                &prBody,
 		MaintainerCanModify: github.Bool(true),
 	}
-	
+
 	_, _, err = c.client.PullRequests.Create(ctx, c.org, repo, pr)
 	if err != nil {
 		return fmt.Errorf("failed to create pull request: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -234,7 +234,7 @@ func (c *Client) GetExistingConfig(ctx context.Context, repo string) (*config.De
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if content == nil {
 		// Try alternative path
 		content, _, err = c.GetFileContent(ctx, repo, ".github/dependabot.yaml")
@@ -242,16 +242,16 @@ func (c *Client) GetExistingConfig(ctx context.Context, repo string) (*config.De
 			return nil, err
 		}
 	}
-	
+
 	if content == nil {
 		return nil, nil // No existing config
 	}
-	
+
 	var cfg config.DependabotConfig
 	if err := yaml.Unmarshal(content, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse existing config: %w", err)
 	}
-	
+
 	return &cfg, nil
 }
 
@@ -262,21 +262,21 @@ func (c *Client) GetTreeSHA(ctx context.Context, repo string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get repository info: %w", err)
 	}
-	
+
 	defaultBranch := "main"
 	if repoInfo.DefaultBranch != nil {
 		defaultBranch = *repoInfo.DefaultBranch
 	}
-	
+
 	ref, _, err := c.client.Git.GetRef(ctx, c.org, repo, "refs/heads/"+defaultBranch)
 	if err != nil {
 		return "", fmt.Errorf("failed to get ref for branch %s: %w", defaultBranch, err)
 	}
-	
+
 	if ref.Object != nil && ref.Object.SHA != nil {
 		return *ref.Object.SHA, nil
 	}
-	
+
 	return "", fmt.Errorf("ref SHA is nil")
 }
 
@@ -285,7 +285,7 @@ func generatePRBody(cfg *config.DependabotConfig) string {
 	for _, update := range cfg.Updates {
 		ecosystems = append(ecosystems, update.PackageEcosystem)
 	}
-	
+
 	// Remove duplicates
 	seen := make(map[string]bool)
 	unique := []string{}
@@ -295,18 +295,18 @@ func generatePRBody(cfg *config.DependabotConfig) string {
 			unique = append(unique, eco)
 		}
 	}
-	
+
 	body := `## Dependabot Configuration Update
 
 This pull request adds or updates the Dependabot configuration for this repository.
 
 ### Configured Ecosystems
 `
-	
+
 	for _, eco := range unique {
 		body += fmt.Sprintf("- ✅ %s\n", eco)
 	}
-	
+
 	body += `
 ### What This Does
 - 🔄 Automatically creates pull requests for dependency updates
@@ -326,6 +326,7 @@ This pull request adds or updates the Dependabot configuration for this reposito
 
 ---
 *Generated by Dependabot Configuration Manager*`
-	
+
 	return body
 }
+

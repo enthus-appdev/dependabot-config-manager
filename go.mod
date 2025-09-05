@@ -1,4 +1,4 @@
-module github.com/your-org/dependabot-config-manager
+module github.com/enthus-appdev/dependabot-config-manager
 
 go 1.25
 

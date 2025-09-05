@@ -3,8 +3,8 @@ package merger
 import (
 	"testing"
 
-	"github.com/your-org/dependabot-config-manager/internal/config"
-	"github.com/your-org/dependabot-config-manager/internal/detector"
+	"github.com/enthus-appdev/dependabot-config-manager/internal/config"
+	"github.com/enthus-appdev/dependabot-config-manager/internal/detector"
 )
 
 func TestMerger_mergeStringSlices(t *testing.T) {
@@ -55,12 +55,12 @@ func TestMerger_mergeStringSlices(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := mergeStringSlices(tt.slice1, tt.slice2)
-			
+
 			if len(got) != len(tt.expected) {
 				t.Errorf("mergeStringSlices() returned %d items, want %d", len(got), len(tt.expected))
 				return
 			}
-			
+
 			// Check each item exists in result (order doesn't matter for merged slices)
 			for _, exp := range tt.expected {
 				found := false
@@ -80,7 +80,7 @@ func TestMerger_mergeStringSlices(t *testing.T) {
 
 func TestMerger_mergeUpdate(t *testing.T) {
 	m := &Merger{}
-	
+
 	existing := config.DependabotUpdate{
 		PackageEcosystem: "npm",
 		Directory:        "/",
@@ -93,7 +93,7 @@ func TestMerger_mergeUpdate(t *testing.T) {
 		TargetBranch:          "develop",
 		Vendor:                true,
 	}
-	
+
 	template := config.DependabotUpdate{
 		PackageEcosystem: "npm",
 		Directory:        "/src",
@@ -112,30 +112,30 @@ func TestMerger_mergeUpdate(t *testing.T) {
 			},
 		},
 	}
-	
+
 	merged := m.mergeUpdate(existing, template)
-	
+
 	// Check merge strategy results
 	if merged.Schedule.Interval != "weekly" {
 		t.Errorf("Schedule should be replaced with template, got %v", merged.Schedule.Interval)
 	}
-	
+
 	if merged.OpenPullRequestsLimit != 10 {
 		t.Errorf("PR limit should be replaced with template, got %d", merged.OpenPullRequestsLimit)
 	}
-	
+
 	if merged.Directory != "/" {
 		t.Errorf("Directory should be preserved from existing, got %v", merged.Directory)
 	}
-	
+
 	if merged.TargetBranch != "develop" {
 		t.Errorf("Target branch should be preserved from existing, got %v", merged.TargetBranch)
 	}
-	
+
 	if !merged.Vendor {
 		t.Errorf("Vendor should be preserved from existing")
 	}
-	
+
 	// Check merged labels contains both
 	expectedLabels := map[string]bool{
 		"dependencies": true,
@@ -143,18 +143,18 @@ func TestMerger_mergeUpdate(t *testing.T) {
 		"automated":    true,
 		"npm":          true,
 	}
-	
+
 	for _, label := range merged.Labels {
 		if !expectedLabels[label] {
 			t.Errorf("Unexpected label %q in merged result", label)
 		}
 		delete(expectedLabels, label)
 	}
-	
+
 	if len(expectedLabels) > 0 {
 		t.Errorf("Missing expected labels in merged result")
 	}
-	
+
 	// Check groups were added
 	if len(merged.Groups) != 1 {
 		t.Errorf("Groups should be merged from template, got %d groups", len(merged.Groups))
@@ -188,7 +188,7 @@ func TestMerger_createFromTemplates(t *testing.T) {
 			},
 		},
 	}
-	
+
 	ecosystems := []detector.Ecosystem{
 		{
 			Name:        "npm",
@@ -203,18 +203,18 @@ func TestMerger_createFromTemplates(t *testing.T) {
 			Confidence:  0.9,
 		},
 	}
-	
+
 	cfg := m.createFromTemplates(ecosystems)
-	
+
 	if cfg.Version != 2 {
 		t.Errorf("Config version should be 2, got %d", cfg.Version)
 	}
-	
+
 	// Should have 3 updates total (2 for npm directories, 1 for docker)
 	if len(cfg.Updates) != 3 {
 		t.Errorf("Should have 3 updates, got %d", len(cfg.Updates))
 	}
-	
+
 	// Count updates by ecosystem
 	npmCount := 0
 	dockerCount := 0
@@ -226,11 +226,11 @@ func TestMerger_createFromTemplates(t *testing.T) {
 			dockerCount++
 		}
 	}
-	
+
 	if npmCount != 2 {
 		t.Errorf("Should have 2 npm updates, got %d", npmCount)
 	}
-	
+
 	if dockerCount != 1 {
 		t.Errorf("Should have 1 docker update, got %d", dockerCount)
 	}

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v50/github"
-	"github.com/your-org/dependabot-config-manager/internal/detector"
+	"github.com/enthus-appdev/dependabot-config-manager/internal/detector"
 )
 
 // Report represents a synchronization report
@@ -25,27 +25,27 @@ type Report struct {
 
 // Summary contains overall statistics
 type Summary struct {
-	TotalRepositories      int     `json:"total_repositories"`
-	ProcessedRepositories  int     `json:"processed_repositories"`
-	ConfiguredRepositories int     `json:"configured_repositories"`
-	UpdatedRepositories    int     `json:"updated_repositories"`
-	SkippedRepositories    int     `json:"skipped_repositories"`
-	FailedRepositories     int     `json:"failed_repositories"`
-	CoveragePercentage     float64 `json:"coverage_percentage"`
+	TotalRepositories      int            `json:"total_repositories"`
+	ProcessedRepositories  int            `json:"processed_repositories"`
+	ConfiguredRepositories int            `json:"configured_repositories"`
+	UpdatedRepositories    int            `json:"updated_repositories"`
+	SkippedRepositories    int            `json:"skipped_repositories"`
+	FailedRepositories     int            `json:"failed_repositories"`
+	CoveragePercentage     float64        `json:"coverage_percentage"`
 	EcosystemBreakdown     map[string]int `json:"ecosystem_breakdown"`
 }
 
 // RepositoryDetail contains details about a specific repository
 type RepositoryDetail struct {
-	Name               string             `json:"name"`
-	Status             string             `json:"status"` // configured, updated, skipped, failed
+	Name               string               `json:"name"`
+	Status             string               `json:"status"` // configured, updated, skipped, failed
 	DetectedEcosystems []detector.Ecosystem `json:"detected_ecosystems,omitempty"`
-	HasExistingConfig  bool               `json:"has_existing_config"`
-	ConfigUpdated      bool               `json:"config_updated"`
-	SkipReason         string             `json:"skip_reason,omitempty"`
-	Error              string             `json:"error,omitempty"`
-	URL                string             `json:"url"`
-	Topics             []string           `json:"topics,omitempty"`
+	HasExistingConfig  bool                 `json:"has_existing_config"`
+	ConfigUpdated      bool                 `json:"config_updated"`
+	SkipReason         string               `json:"skip_reason,omitempty"`
+	Error              string               `json:"error,omitempty"`
+	URL                string               `json:"url"`
+	Topics             []string             `json:"topics,omitempty"`
 }
 
 // Error represents an error that occurred during processing
@@ -91,7 +91,7 @@ func (r *Reporter) AddRepository(repo *github.Repository, ecosystems []detector.
 		Topics:             repo.Topics,
 		SkipReason:         skipReason,
 	}
-	
+
 	if err != nil {
 		detail.Error = err.Error()
 		r.report.Errors = append(r.report.Errors, Error{
@@ -100,15 +100,15 @@ func (r *Reporter) AddRepository(repo *github.Repository, ecosystems []detector.
 			Timestamp:  time.Now(),
 		})
 	}
-	
+
 	// Update ecosystem breakdown
 	for _, eco := range ecosystems {
 		r.report.Summary.EcosystemBreakdown[eco.Name]++
 	}
-	
+
 	// Update summary counters
 	r.report.Summary.TotalRepositories++
-	
+
 	switch status {
 	case "configured":
 		r.report.Summary.ConfiguredRepositories++
@@ -123,7 +123,7 @@ func (r *Reporter) AddRepository(repo *github.Repository, ecosystems []detector.
 	default:
 		r.report.Summary.ProcessedRepositories++
 	}
-	
+
 	r.report.RepositoryDetails = append(r.report.RepositoryDetails, detail)
 }
 
@@ -133,7 +133,7 @@ func (r *Reporter) AddProcessedRepository(repo *github.Repository, ecosystems []
 	if wasUpdated {
 		status = "updated"
 	}
-	
+
 	r.AddRepository(repo, ecosystems, status, "", nil)
 }
 
@@ -150,11 +150,11 @@ func (r *Reporter) AddFailedRepository(repo *github.Repository, err error) {
 // Finalize finalizes the report with calculated statistics
 func (r *Reporter) Finalize() {
 	r.report.Duration = time.Since(r.startTime).String()
-	r.report.Summary.ProcessedRepositories = r.report.Summary.TotalRepositories - 
+	r.report.Summary.ProcessedRepositories = r.report.Summary.TotalRepositories -
 		r.report.Summary.SkippedRepositories - r.report.Summary.FailedRepositories
-	
+
 	if r.report.Summary.TotalRepositories > 0 {
-		r.report.Summary.CoveragePercentage = float64(r.report.Summary.ConfiguredRepositories+r.report.Summary.UpdatedRepositories) / 
+		r.report.Summary.CoveragePercentage = float64(r.report.Summary.ConfiguredRepositories+r.report.Summary.UpdatedRepositories) /
 			float64(r.report.Summary.TotalRepositories) * 100
 	}
 }
@@ -162,14 +162,14 @@ func (r *Reporter) Finalize() {
 // SaveReport saves the report to a file
 func (r *Reporter) SaveReport(format string) error {
 	r.Finalize()
-	
+
 	// Create output directory if it doesn't exist
 	if err := os.MkdirAll(r.outputDir, 0755); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
-	
+
 	timestamp := time.Now().Format("2006-01-02-150405")
-	
+
 	switch format {
 	case "json":
 		return r.saveJSON(timestamp)
@@ -192,16 +192,16 @@ func (r *Reporter) SaveReport(format string) error {
 // saveJSON saves the report as JSON
 func (r *Reporter) saveJSON(timestamp string) error {
 	filename := filepath.Join(r.outputDir, fmt.Sprintf("dependabot-report-%s.json", timestamp))
-	
+
 	data, err := json.MarshalIndent(r.report, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal report: %w", err)
 	}
-	
+
 	if err := ioutil.WriteFile(filename, data, 0644); err != nil {
 		return fmt.Errorf("failed to write JSON report: %w", err)
 	}
-	
+
 	fmt.Printf("📊 Report saved to %s\n", filename)
 	return nil
 }
@@ -209,14 +209,14 @@ func (r *Reporter) saveJSON(timestamp string) error {
 // saveMarkdown saves the report as Markdown
 func (r *Reporter) saveMarkdown(timestamp string) error {
 	filename := filepath.Join(r.outputDir, fmt.Sprintf("dependabot-report-%s.md", timestamp))
-	
+
 	var sb strings.Builder
-	
+
 	sb.WriteString("# Dependabot Configuration Report\n\n")
 	sb.WriteString(fmt.Sprintf("**Organization:** %s\n", r.report.Organization))
 	sb.WriteString(fmt.Sprintf("**Generated:** %s\n", r.report.Timestamp.Format(time.RFC3339)))
 	sb.WriteString(fmt.Sprintf("**Duration:** %s\n\n", r.report.Duration))
-	
+
 	// Summary section
 	sb.WriteString("## Summary\n\n")
 	sb.WriteString(fmt.Sprintf("- **Total Repositories:** %d\n", r.report.Summary.TotalRepositories))
@@ -225,7 +225,7 @@ func (r *Reporter) saveMarkdown(timestamp string) error {
 	sb.WriteString(fmt.Sprintf("- **Skipped:** %d\n", r.report.Summary.SkippedRepositories))
 	sb.WriteString(fmt.Sprintf("- **Failed:** %d\n", r.report.Summary.FailedRepositories))
 	sb.WriteString(fmt.Sprintf("- **Coverage:** %.1f%%\n\n", r.report.Summary.CoveragePercentage))
-	
+
 	// Ecosystem breakdown
 	if len(r.report.Summary.EcosystemBreakdown) > 0 {
 		sb.WriteString("## Ecosystem Distribution\n\n")
@@ -236,10 +236,10 @@ func (r *Reporter) saveMarkdown(timestamp string) error {
 		}
 		sb.WriteString("\n")
 	}
-	
+
 	// Repository details
 	sb.WriteString("## Repository Details\n\n")
-	
+
 	// Updated repositories
 	updated := r.filterByStatus("updated")
 	if len(updated) > 0 {
@@ -257,7 +257,7 @@ func (r *Reporter) saveMarkdown(timestamp string) error {
 		}
 		sb.WriteString("\n")
 	}
-	
+
 	// Failed repositories
 	failed := r.filterByStatus("failed")
 	if len(failed) > 0 {
@@ -271,7 +271,7 @@ func (r *Reporter) saveMarkdown(timestamp string) error {
 		}
 		sb.WriteString("\n")
 	}
-	
+
 	// Skipped repositories
 	skipped := r.filterByStatus("skipped")
 	if len(skipped) > 0 {
@@ -285,26 +285,26 @@ func (r *Reporter) saveMarkdown(timestamp string) error {
 		}
 		sb.WriteString("\n")
 	}
-	
+
 	// Recommendations
 	sb.WriteString("## Recommendations\n\n")
-	
+
 	if r.report.Summary.FailedRepositories > 0 {
 		sb.WriteString("- ⚠️ Review failed repositories and resolve issues\n")
 	}
-	
+
 	if r.report.Summary.CoveragePercentage < 80 {
 		sb.WriteString("- 📈 Consider investigating skipped repositories to increase coverage\n")
 	}
-	
+
 	if len(r.report.Summary.EcosystemBreakdown) > 5 {
 		sb.WriteString("- 🎯 Consider creating specialized templates for frequently used ecosystems\n")
 	}
-	
+
 	if err := ioutil.WriteFile(filename, []byte(sb.String()), 0644); err != nil {
 		return fmt.Errorf("failed to write Markdown report: %w", err)
 	}
-	
+
 	fmt.Printf("📝 Markdown report saved to %s\n", filename)
 	return nil
 }
@@ -312,13 +312,13 @@ func (r *Reporter) saveMarkdown(timestamp string) error {
 // saveHTML saves the report as HTML
 func (r *Reporter) saveHTML(timestamp string) error {
 	filename := filepath.Join(r.outputDir, fmt.Sprintf("dependabot-report-%s.html", timestamp))
-	
+
 	html := r.generateHTML()
-	
+
 	if err := ioutil.WriteFile(filename, []byte(html), 0644); err != nil {
 		return fmt.Errorf("failed to write HTML report: %w", err)
 	}
-	
+
 	fmt.Printf("🌐 HTML report saved to %s\n", filename)
 	return nil
 }
@@ -383,7 +383,7 @@ func (r *Reporter) filterByStatus(status string) []RepositoryDetail {
 // PrintSummary prints a summary to stdout
 func (r *Reporter) PrintSummary() {
 	r.Finalize()
-	
+
 	fmt.Println("\n📊 Synchronization Summary")
 	fmt.Println("═══════════════════════════")
 	fmt.Printf("Total Repositories: %d\n", r.report.Summary.TotalRepositories)
@@ -393,14 +393,14 @@ func (r *Reporter) PrintSummary() {
 	fmt.Printf("❌ Failed: %d\n", r.report.Summary.FailedRepositories)
 	fmt.Printf("📈 Coverage: %.1f%%\n", r.report.Summary.CoveragePercentage)
 	fmt.Printf("⏱️  Duration: %s\n", r.report.Duration)
-	
+
 	if len(r.report.Summary.EcosystemBreakdown) > 0 {
 		fmt.Println("\n🔧 Detected Ecosystems:")
 		for eco, count := range r.report.Summary.EcosystemBreakdown {
 			fmt.Printf("  - %s: %d repositories\n", eco, count)
 		}
 	}
-	
+
 	if len(r.report.Errors) > 0 {
 		fmt.Printf("\n⚠️  %d errors occurred during synchronization\n", len(r.report.Errors))
 	}

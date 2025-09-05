@@ -39,7 +39,7 @@ func (d *Detector) Detect(ctx context.Context, repo string) ([]Ecosystem, error)
 	}
 
 	ecosystems := make(map[string]*Ecosystem)
-	
+
 	indicators := map[string][]indicator{
 		"npm": {
 			{file: "package-lock.json", confidence: 1.0},
@@ -119,7 +119,7 @@ func (d *Detector) Detect(ctx context.Context, repo string) ([]Ecosystem, error)
 		if entry.Type != nil && *entry.Type == "blob" && entry.Path != nil {
 			path := *entry.Path
 			dir := extractDirectory(path)
-			
+
 			for ecosystem, files := range indicators {
 				for _, ind := range files {
 					if matchesPattern(path, ind.file) {
@@ -133,14 +133,14 @@ func (d *Detector) Detect(ctx context.Context, repo string) ([]Ecosystem, error)
 						} else if ind.confidence > ecosystems[ecosystem].Confidence {
 							ecosystems[ecosystem].Confidence = ind.confidence
 						}
-						
+
 						// Some ecosystems always scan from root directory
 						directory := dir
 						switch ecosystem {
 						case "docker", "github-actions", "terraform", "gitsubmodule":
 							directory = "/"
 						}
-						
+
 						ecosystems[ecosystem].Directories = appendUnique(
 							ecosystems[ecosystem].Directories, directory,
 						)
@@ -154,7 +154,7 @@ func (d *Detector) Detect(ctx context.Context, repo string) ([]Ecosystem, error)
 	for _, eco := range ecosystems {
 		result = append(result, *eco)
 	}
-	
+
 	// Sort by confidence (highest first)
 	for i := 0; i < len(result)-1; i++ {
 		for j := i + 1; j < len(result); j++ {
@@ -163,14 +163,14 @@ func (d *Detector) Detect(ctx context.Context, repo string) ([]Ecosystem, error)
 			}
 		}
 	}
-	
+
 	return result, nil
 }
 
 // HasExclusionTopic checks if repository has exclusion topics
 func (d *Detector) HasExclusionTopic(ctx context.Context, repo *github.Repository) bool {
 	excludeTags := []string{"no-dependabot", "skip-dependabot", "exclude-dependabot"}
-	
+
 	for _, topic := range repo.Topics {
 		for _, exclude := range excludeTags {
 			if topic == exclude {

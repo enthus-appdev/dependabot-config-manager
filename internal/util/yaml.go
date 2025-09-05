@@ -16,3 +16,4 @@ func MarshalYAML(v interface{}, indent int) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
+

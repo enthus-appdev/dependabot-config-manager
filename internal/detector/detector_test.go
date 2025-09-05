@@ -174,7 +174,7 @@ func TestDetector_HasExclusionTopic(t *testing.T) {
 			repo := &github.Repository{
 				Topics: tt.topics,
 			}
-			
+
 			if got := d.HasExclusionTopic(context.Background(), repo); got != tt.expected {
 				t.Errorf("HasExclusionTopic() = %v, want %v", got, tt.expected)
 			}

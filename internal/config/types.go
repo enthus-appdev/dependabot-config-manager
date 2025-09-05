@@ -8,24 +8,24 @@ type DependabotConfig struct {
 
 // DependabotUpdate represents an update configuration
 type DependabotUpdate struct {
-	PackageEcosystem       string                 `yaml:"package-ecosystem"`
-	Directory              string                 `yaml:"directory"`
-	Schedule               Schedule               `yaml:"schedule"`
-	OpenPullRequestsLimit  int                    `yaml:"open-pull-requests-limit,omitempty"`
-	Labels                 []string               `yaml:"labels,omitempty"`
-	Reviewers              []string               `yaml:"reviewers,omitempty"`
-	Assignees              []string               `yaml:"assignees,omitempty"`
-	Milestone              int                    `yaml:"milestone,omitempty"`
-	Groups                 map[string]GroupConfig `yaml:"groups,omitempty"`
-	VersioningStrategy     string                 `yaml:"versioning-strategy,omitempty"`
-	CommitMessage          *CommitMessage         `yaml:"commit-message,omitempty"`
-	TargetBranch           string                 `yaml:"target-branch,omitempty"`
-	Vendor                 bool                   `yaml:"vendor,omitempty"`
+	PackageEcosystem      string                 `yaml:"package-ecosystem"`
+	Directory             string                 `yaml:"directory"`
+	Schedule              Schedule               `yaml:"schedule"`
+	OpenPullRequestsLimit int                    `yaml:"open-pull-requests-limit,omitempty"`
+	Labels                []string               `yaml:"labels,omitempty"`
+	Reviewers             []string               `yaml:"reviewers,omitempty"`
+	Assignees             []string               `yaml:"assignees,omitempty"`
+	Milestone             int                    `yaml:"milestone,omitempty"`
+	Groups                map[string]GroupConfig `yaml:"groups,omitempty"`
+	VersioningStrategy    string                 `yaml:"versioning-strategy,omitempty"`
+	CommitMessage         *CommitMessage         `yaml:"commit-message,omitempty"`
+	TargetBranch          string                 `yaml:"target-branch,omitempty"`
+	Vendor                bool                   `yaml:"vendor,omitempty"`
 	Insecure              []string               `yaml:"insecure-external-code-execution,omitempty"`
-	RebaseStrategy         string                 `yaml:"rebase-strategy,omitempty"`
-	Ignore                 []IgnoreConfig         `yaml:"ignore,omitempty"`
-	Allow                  []AllowConfig          `yaml:"allow,omitempty"`
-	Registries             []string               `yaml:"registries,omitempty"`
+	RebaseStrategy        string                 `yaml:"rebase-strategy,omitempty"`
+	Ignore                []IgnoreConfig         `yaml:"ignore,omitempty"`
+	Allow                 []AllowConfig          `yaml:"allow,omitempty"`
+	Registries            []string               `yaml:"registries,omitempty"`
 }
 
 // Schedule represents update schedule
@@ -38,10 +38,10 @@ type Schedule struct {
 
 // GroupConfig represents dependency grouping
 type GroupConfig struct {
-	DependencyType string   `yaml:"dependency-type,omitempty"`
-	Patterns       []string `yaml:"patterns,omitempty"`
+	DependencyType  string   `yaml:"dependency-type,omitempty"`
+	Patterns        []string `yaml:"patterns,omitempty"`
 	ExcludePatterns []string `yaml:"exclude-patterns,omitempty"`
-	UpdateTypes    []string `yaml:"update-types,omitempty"`
+	UpdateTypes     []string `yaml:"update-types,omitempty"`
 }
 
 // CommitMessage represents commit message configuration
@@ -78,7 +78,7 @@ func (c *DependabotConfig) Equal(other *DependabotConfig) bool {
 	if len(c.Updates) != len(other.Updates) {
 		return false
 	}
-	
+
 	// Simple comparison - in production would need deep comparison
 	for i := range c.Updates {
 		if !c.Updates[i].Equal(&other.Updates[i]) {
