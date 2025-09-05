@@ -106,17 +106,28 @@ func (c *Client) GetFileContent(ctx context.Context, repo, path string) ([]byte,
 
 // CreateOrUpdateFile creates or updates a file in a repository
 func (c *Client) CreateOrUpdateFile(ctx context.Context, repo, path, message string, content []byte, sha string) error {
+	// Get repository info to determine default branch
+	repoInfo, _, err := c.client.Repositories.Get(ctx, c.org, repo)
+	if err != nil {
+		return fmt.Errorf("failed to get repository info: %w", err)
+	}
+	
+	defaultBranch := "main"
+	if repoInfo.DefaultBranch != nil {
+		defaultBranch = *repoInfo.DefaultBranch
+	}
+	
 	opts := &github.RepositoryContentFileOptions{
 		Message: &message,
 		Content: content,
-		Branch:  github.String("main"),
+		Branch:  github.String(defaultBranch),
 	}
 	
 	if sha != "" {
 		opts.SHA = &sha
 	}
 	
-	_, _, err := c.client.Repositories.CreateFile(ctx, c.org, repo, path, opts)
+	_, _, err = c.client.Repositories.CreateFile(ctx, c.org, repo, path, opts)
 	if err != nil {
 		// If creation fails, try update
 		if sha == "" {
@@ -245,13 +256,20 @@ func (c *Client) GetExistingConfig(ctx context.Context, repo string) (*config.De
 
 // GetTreeSHA gets the SHA of the repository tree
 func (c *Client) GetTreeSHA(ctx context.Context, repo string) (string, error) {
-	ref, _, err := c.client.Git.GetRef(ctx, c.org, repo, "refs/heads/main")
+	// Get repository info to determine default branch
+	repoInfo, _, err := c.client.Repositories.Get(ctx, c.org, repo)
 	if err != nil {
-		// Try master branch
-		ref, _, err = c.client.Git.GetRef(ctx, c.org, repo, "refs/heads/master")
-		if err != nil {
-			return "", fmt.Errorf("failed to get ref: %w", err)
-		}
+		return "", fmt.Errorf("failed to get repository info: %w", err)
+	}
+	
+	defaultBranch := "main"
+	if repoInfo.DefaultBranch != nil {
+		defaultBranch = *repoInfo.DefaultBranch
+	}
+	
+	ref, _, err := c.client.Git.GetRef(ctx, c.org, repo, "refs/heads/"+defaultBranch)
+	if err != nil {
+		return "", fmt.Errorf("failed to get ref for branch %s: %w", defaultBranch, err)
 	}
 	
 	if ref.Object != nil && ref.Object.SHA != nil {
