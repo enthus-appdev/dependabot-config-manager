@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-github/v50/github"
 	"github.com/your-org/dependabot-config-manager/internal/config"
+	"github.com/your-org/dependabot-config-manager/internal/util"
 	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v3"
 )
@@ -147,7 +148,7 @@ func (c *Client) CreateOrUpdateFile(ctx context.Context, repo, path, message str
 }
 
 // CreatePullRequest creates a pull request for the Dependabot configuration
-func (c *Client) CreatePullRequest(ctx context.Context, repo string, config *config.DependabotConfig) error {
+func (c *Client) CreatePullRequest(ctx context.Context, repo string, config *config.DependabotConfig, yamlIndent int) error {
 	// Create a branch
 	branchName := fmt.Sprintf("dependabot-config-%d", time.Now().Unix())
 	
@@ -182,7 +183,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, repo string, config *con
 	}
 	
 	// Create or update the Dependabot config file on the new branch
-	content, err := yaml.Marshal(config)
+	content, err := util.MarshalYAML(config, yamlIndent)
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}

@@ -15,7 +15,7 @@ import (
 	"github.com/your-org/dependabot-config-manager/internal/merger"
 	githubClient "github.com/your-org/dependabot-config-manager/internal/github"
 	"github.com/your-org/dependabot-config-manager/internal/reporter"
-	"gopkg.in/yaml.v3"
+	"github.com/your-org/dependabot-config-manager/internal/util"
 )
 
 // Version is the application version
@@ -35,6 +35,7 @@ type options struct {
 	concurrency      int
 	verbose          bool
 	version          bool
+	yamlIndent       int
 }
 
 func main() {
@@ -243,11 +244,11 @@ func (s *Synchronizer) processRepository(ctx context.Context, repo *github.Repos
 // applyConfiguration applies the configuration to a repository
 func (s *Synchronizer) applyConfiguration(ctx context.Context, repoName string, cfg *config.DependabotConfig) error {
 	if s.options.createPR {
-		return s.client.CreatePullRequest(ctx, repoName, cfg)
+		return s.client.CreatePullRequest(ctx, repoName, cfg, s.options.yamlIndent)
 	}
 	
 	// Direct commit to main branch
-	content, err := yaml.Marshal(cfg)
+	content, err := util.MarshalYAML(cfg, s.options.yamlIndent)
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
@@ -278,6 +279,7 @@ func parseFlags() *options {
 	flag.IntVar(&opts.concurrency, "concurrency", 10, "Number of concurrent repository operations")
 	flag.BoolVar(&opts.verbose, "verbose", false, "Enable verbose output")
 	flag.BoolVar(&opts.version, "version", false, "Show version information")
+	flag.IntVar(&opts.yamlIndent, "yaml-indent", 2, "Number of spaces for YAML indentation")
 	
 	// Custom flag for repositories list
 	var reposList string
