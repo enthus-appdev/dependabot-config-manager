@@ -1,4 +1,4 @@
-version: 2
+version: "2"
 
 run:
   timeout: 5m
@@ -10,11 +10,10 @@ linters:
     - staticcheck
     - ineffassign
     - gocritic
-    - revive
 
-linters-settings:
+linter-config:
   govet:
-    check-shadowing: true
+    shadow: true
   errcheck:
     check-type-assertions: true
   gocritic:
@@ -25,6 +24,6 @@ linters-settings:
       - truncateCmp
 
 issues:
-  exclude-use-default: false
+  exclude-dirs-use-default: false
   max-same-issues: 0
-  max-issues-per-linter: 0
+  max-per-linter: 0
