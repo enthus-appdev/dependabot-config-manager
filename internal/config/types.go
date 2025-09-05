@@ -1,3 +1,4 @@
+// Package config defines the types and structures for Dependabot configuration management.
 package config
 
 // DependabotConfig represents the Dependabot configuration

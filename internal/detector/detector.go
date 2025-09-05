@@ -1,3 +1,4 @@
+// Package detector provides ecosystem detection for GitHub repositories.
 package detector
 
 import (
@@ -168,7 +169,7 @@ func (d *Detector) Detect(ctx context.Context, repo string) ([]Ecosystem, error)
 }
 
 // HasExclusionTopic checks if repository has exclusion topics
-func (d *Detector) HasExclusionTopic(ctx context.Context, repo *github.Repository) bool {
+func (d *Detector) HasExclusionTopic(_ context.Context, repo *github.Repository) bool {
 	excludeTags := []string{"no-dependabot", "skip-dependabot", "exclude-dependabot"}
 
 	for _, topic := range repo.Topics {

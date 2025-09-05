@@ -1,9 +1,9 @@
+// Package reporter provides reporting functionality for Dependabot sync operations.
 package reporter
 
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -128,7 +128,7 @@ func (r *Reporter) AddRepository(repo *github.Repository, ecosystems []detector.
 }
 
 // AddProcessedRepository adds a successfully processed repository
-func (r *Reporter) AddProcessedRepository(repo *github.Repository, ecosystems []detector.Ecosystem, hasExisting, wasUpdated bool) {
+func (r *Reporter) AddProcessedRepository(repo *github.Repository, ecosystems []detector.Ecosystem, _, wasUpdated bool) {
 	status := "configured"
 	if wasUpdated {
 		status = "updated"
@@ -198,7 +198,7 @@ func (r *Reporter) saveJSON(timestamp string) error {
 		return fmt.Errorf("failed to marshal report: %w", err)
 	}
 
-	if err := ioutil.WriteFile(filename, data, 0644); err != nil {
+	if err := os.WriteFile(filename, data, 0644); err != nil {
 		return fmt.Errorf("failed to write JSON report: %w", err)
 	}
 
@@ -301,7 +301,7 @@ func (r *Reporter) saveMarkdown(timestamp string) error {
 		sb.WriteString("- 🎯 Consider creating specialized templates for frequently used ecosystems\n")
 	}
 
-	if err := ioutil.WriteFile(filename, []byte(sb.String()), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(sb.String()), 0644); err != nil {
 		return fmt.Errorf("failed to write Markdown report: %w", err)
 	}
 
@@ -315,7 +315,7 @@ func (r *Reporter) saveHTML(timestamp string) error {
 
 	html := r.generateHTML()
 
-	if err := ioutil.WriteFile(filename, []byte(html), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(html), 0644); err != nil {
 		return fmt.Errorf("failed to write HTML report: %w", err)
 	}
 

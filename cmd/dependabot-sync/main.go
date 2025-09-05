@@ -1,3 +1,4 @@
+// Package main provides the dependabot-sync CLI tool for managing Dependabot configurations across GitHub organizations.
 package main
 
 import (
@@ -101,7 +102,6 @@ type Synchronizer struct {
 	options   *options
 	semaphore chan struct{}
 	wg        *sync.WaitGroup
-	mu        sync.Mutex
 }
 
 // Run executes the synchronization process

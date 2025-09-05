@@ -1,8 +1,9 @@
+// Package merger handles merging of Dependabot configurations.
 package merger
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sort"
 
@@ -206,7 +207,7 @@ func (m *Merger) loadTemplates() error {
 
 	for _, eco := range ecosystems {
 		templatePath := filepath.Join(m.templatesDir, eco, "default.yml")
-		data, err := ioutil.ReadFile(templatePath)
+		data, err := os.ReadFile(templatePath)
 		if err != nil {
 			continue // Template not found, skip
 		}
