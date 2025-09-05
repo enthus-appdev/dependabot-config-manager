@@ -45,10 +45,6 @@ RUN mkdir -p /app/reports && \
 # Switch to non-root user
 USER appuser
 
-# Set environment variables
-ENV GITHUB_TOKEN=""
-ENV GITHUB_ORG=""
-
 # Default command
 ENTRYPOINT ["dependabot-sync"]
 CMD ["--help"]
