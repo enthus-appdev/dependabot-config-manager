@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"sort"
 
 	"github.com/your-org/dependabot-config-manager/internal/config"
 	"github.com/your-org/dependabot-config-manager/internal/detector"
@@ -104,6 +105,9 @@ func (m *Merger) Merge(existing *config.DependabotConfig, ecosystems []detector.
 		}
 	}
 	
+	// Sort updates for deterministic ordering
+	sortUpdates(merged.Updates)
+	
 	return merged
 }
 
@@ -188,6 +192,9 @@ func (m *Merger) createFromTemplates(ecosystems []detector.Ecosystem) *config.De
 			}
 		}
 	}
+	
+	// Sort updates for deterministic ordering
+	sortUpdates(cfg.Updates)
 	
 	return cfg
 }
@@ -276,4 +283,16 @@ func mergeStringSlices(a, b []string) []string {
 	}
 	
 	return result
+}
+
+// sortUpdates sorts the updates array for deterministic ordering
+func sortUpdates(updates []config.DependabotUpdate) {
+	sort.Slice(updates, func(i, j int) bool {
+		// First, sort by package ecosystem
+		if updates[i].PackageEcosystem != updates[j].PackageEcosystem {
+			return updates[i].PackageEcosystem < updates[j].PackageEcosystem
+		}
+		// Then by directory
+		return updates[i].Directory < updates[j].Directory
+	})
 }
