@@ -1,0 +1,13 @@
+# Docker Dependabot configuration
+version: 2
+updates:
+  - package-ecosystem: "docker"
+    schedule:
+      interval: "daily"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore"
+      include: "scope"

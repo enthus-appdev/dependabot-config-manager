@@ -1,0 +1,12 @@
+version: 2
+updates:
+    - package-ecosystem: github-actions
+      schedule:
+        interval: "daily"
+        time: "04:00"
+      labels:
+        - "dependencies"
+        - "github-actions"
+      commit-message:
+        prefix: "chore"
+        include: "scope"

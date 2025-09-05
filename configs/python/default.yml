@@ -1,0 +1,58 @@
+# Python/pip Dependabot configuration
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+      - "pip"
+    groups:
+      # Group all development/testing dependencies
+      development:
+        patterns:
+          - "pytest*"
+          - "black"
+          - "flake8*"
+          - "mypy*"
+          - "pylint*"
+          - "coverage*"
+          - "tox*"
+      # Group all AWS packages
+      aws:
+        patterns:
+          - "boto3*"
+          - "botocore*"
+      # Group all data science packages
+      data-science:
+        patterns:
+          - "pandas*"
+          - "numpy*"
+          - "scipy*"
+          - "scikit-learn*"
+      # Group all Django packages
+      django:
+        patterns:
+          - "django*"
+      # Group all FastAPI packages
+      fastapi:
+        patterns:
+          - "fastapi*"
+          - "uvicorn*"
+          - "pydantic*"
+    versioning-strategy: "increase"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    allow:
+      # Only allow direct updates
+      - dependency-type: "direct"
+    ignore:
+      # Ignore alpha/beta/rc versions
+      - dependency-name: "*"
+        versions: ["*a*", "*b*", "*rc*"]

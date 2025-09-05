@@ -1,0 +1,15 @@
+# NPM/Node.js Dependabot configuration
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    schedule:
+      interval: "daily"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "javascript"
+    versioning-strategy: "increase"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"

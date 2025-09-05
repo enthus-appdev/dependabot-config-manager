@@ -1,0 +1,106 @@
+name: Sync Dependabot Configurations
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Perform dry run only'
+        type: boolean
+        default: false
+        required: false
+      create_pr:
+        description: 'Create PRs instead of direct commits'
+        type: boolean
+        default: true
+        required: false
+      repositories:
+        description: 'Specific repositories (comma-separated, leave empty for all)'
+        type: string
+        required: false
+      concurrency:
+        description: 'Number of concurrent operations'
+        type: number
+        default: 10
+        required: false
+      verbose:
+        description: 'Enable verbose output'
+        type: boolean
+        default: false
+        required: false
+
+jobs:
+  sync:
+    name: Sync Dependabot Configurations
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+          
+      - name: Install dependencies
+        run: go mod download
+        
+      - name: Build application
+        run: |
+          go build -ldflags="-w -s -X main.Version=$(git describe --tags --always)" \
+            -o dependabot-sync ./cmd/dependabot-sync
+      
+      - name: Run synchronization
+        env:
+          GITHUB_TOKEN: ${{ secrets.ORG_ADMIN_TOKEN }}
+          GITHUB_ORG: ${{ vars.GITHUB_ORG }}
+        run: |
+          ./dependabot-sync \
+            --org "${{ env.GITHUB_ORG }}" \
+            --token "${{ env.GITHUB_TOKEN }}" \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} \
+            ${{ github.event.inputs.create_pr == 'true' && '--create-pr' || '' }} \
+            ${{ github.event.inputs.repositories && format('--repos={0}', github.event.inputs.repositories) || '' }} \
+            ${{ github.event.inputs.concurrency && format('--concurrency={0}', github.event.inputs.concurrency) || '' }} \
+            ${{ github.event.inputs.verbose == 'true' && '--verbose' || '' }} \
+            --report-format=all
+      
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: dependabot-reports
+          path: reports/
+          retention-days: 30
+          
+      - name: Create issue on failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const title = `Dependabot Sync Failed - ${new Date().toISOString().split('T')[0]}`;
+            const body = `The Dependabot configuration sync workflow failed.
+            
+            **Workflow Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}
+            **Triggered by:** ${context.actor}
+            **Event:** ${context.eventName}
+            
+            Please review the logs and fix any issues.`;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['bug', 'automation', 'dependabot']
+            });

@@ -1,0 +1,13 @@
+# Go modules Dependabot configuration
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    schedule:
+      interval: "daily"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "golang"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
